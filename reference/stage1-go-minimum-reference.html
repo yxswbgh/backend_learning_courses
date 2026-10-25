@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="后端阶段 1 的 Go-only 最低速查：基础、并发、工程、标准库与 filemix 过关题。">
+  <title>阶段 1 Go 最低速查</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body class="reference-page">
+  <header class="site-header">
+    <div class="wrap">
+      <div class="masthead">
+        <strong>阶段 1 · Go 速查</strong>
+        <span>只打印必须掌握</span>
+      </div>
+      <h1 class="reference-title">四类能力，一道 CLI 收口</h1>
+      <p class="lede">用于写代码时快速核对语法和行为。Java、反射、unsafe 与 GMP 不在这张表里。</p>
+    </div>
+  </header>
+
+  <main class="wrap reference-grid">
+    <section class="reference-block">
+      <h2>01 零值与容器</h2>
+      <pre><code>var n int       // 0
+var s string    // ""
+var ok bool     // false
+var p *T        // nil
+var xs []int    // nil, append 可用
+var m map[K]V   // nil, 读可用，写前 make
+
+m = make(map[string]int)
+v, exists := m["key"]
+delete(m, "key")</code></pre>
+      <p>slice 是“指针 + len + cap”。<code>append</code> 可能复用底层数组。</p>
+      <pre><code>a := []int{1, 2}
+b := a[:1]
+b = append(b, 9) // 容量够时可能改到 a[1]
+
+copyA := append([]int(nil), a...)</code></pre>
+    </section>
+
+    <section class="reference-block">
+      <h2>02 Struct、方法与接口</h2>
+      <pre><code>type User struct {
+    Name string
+}
+
+func (u *User) Rename(name string) {
+    u.Name = name
+}
+
+func (u User) Describe() string {
+    return u.Name
+}
+
+type Describer interface {
+    Describe() string
+}
+
+var _ Describer = User{}</code></pre>
+      <p>值接收者拿副本；需要修改时用指针。接口隐式实现，不需要声明 implements。</p>
+    </section>
+
+    <section class="reference-block">
+      <h2>03 错误与收尾</h2>
+      <pre><code>if err != nil {
+    return fmt.Errorf("load %s: %w", path, err)
+}
+
+errors.Is(err, fs.ErrNotExist)
+errors.As(err, &pathErr)
+
+defer f.Close()
+
+defer func() {
+    if r := recover(); r != nil {
+        log.Printf("recovered: %v", r)
+    }
+}()</code></pre>
+      <p>普通失败用 error；panic 只处理意外。defer 后进先出。</p>
+    </section>
+
+    <section class="reference-block">
+      <h2>04 Goroutine / Channel</h2>
+      <pre><code>done := make(chan struct{})
+go func() {
+    defer close(done)
+    work()
+}()
+&lt;-done
+
+buffered := make(chan int, 10)
+buffered &lt;- 1
+got := &lt;-buffered
+
+v, ok := &lt;-buffered // closed 时 ok=false</code></pre>
+      <p>无缓冲：发送与接收会合。有缓冲：缓冲满时发送阻塞。只让发送方 close。</p>
+    </section>
+
+    <section class="reference-block">
+      <h2>05 Select / Sync</h2>
+      <pre><code>select {
+case v := &lt;-ch:
+    use(v)
+case &lt;-ctx.Done():
+    return ctx.Err()
+default:
+    // 没有 ready case 时立即走这里
+}
+
+var mu sync.Mutex
+mu.Lock()
+defer mu.Unlock()
+
+var wg sync.WaitGroup
+wg.Add(1)
+go func() { defer wg.Done() }()
+wg.Wait()
+
+var once sync.Once
+once.Do(initOnce)</code></pre>
+      <p><code>Add</code> 在启动 goroutine 前调用。多个 ready case 同时存在时随机选择。</p>
+    </section>
+
+    <section class="reference-block">
+      <h2>06 Context</h2>
+      <pre><code>ctx, cancel := context.WithTimeout(parent, 2*time.Second)
+defer cancel()
+
+select {
+case &lt;-ctx.Done():
+    return ctx.Err()
+case result := &lt;-work:
+    return result, nil
+}</code></pre>
+      <p>context 作为第一个参数向下传。取消是协作式信号，不会强杀 goroutine。</p>
+    </section>
+
+    <section class="reference-block">
+      <h2>07 Module 与检查</h2>
+      <pre><code>mkdir filemix
+cd filemix
+go mod init example.com/filemix
+
+gofmt -w $(find . -name '*.go' -type f)
+go vet ./...
+golangci-lint run ./...
+go test -race ./...
+go build ./...</code></pre>
+      <p>包名短、小写、表达职责；一个目录一个包。</p>
+    </section>
+
+    <section class="reference-block">
+      <h2>08 表格测试与 Benchmark</h2>
+      <pre><code>func TestCount(t *testing.T) {
+    tests := []struct {
+        name string
+        in   []string
+        want map[string]int
+    }{
+        {"one", []string{"a.go"}, map[string]int{".go": 1}},
+    }
+
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            got := count(tt.in)
+            if !reflect.DeepEqual(got, tt.want) {
+                t.Fatalf("got %v, want %v", got, tt.want)
+            }
+        })
+    }
+}
+
+func BenchmarkCount(b *testing.B) {
+    in := []string{"a.go", "b.md"}
+    for i := 0; i &lt; b.N; i++ {
+        _ = count(in)
+    }
+}</code></pre>
+    </section>
+
+    <section class="reference-block">
+      <h2>09 标准库地图</h2>
+      <ul>
+        <li><code>net/http</code>：ServeMux、handler、ListenAndServe。</li>
+        <li><code>encoding/json</code>：Marshal/Unmarshal 或 Encoder/Decoder。</li>
+        <li><code>time</code>：Now、Since、Duration、Timer、Ticker。</li>
+        <li><code>os</code>：Args、ReadFile/WriteFile、Stderr、Exit。</li>
+        <li><code>io</code>：Reader、Writer、Copy。</li>
+        <li><code>database/sql</code>：Open、PingContext、Query、Exec、Scan、Close。</li>
+        <li><code>path/filepath</code>：Join、Ext、WalkDir。</li>
+      </ul>
+    </section>
+
+    <section class="reference-block">
+      <h2>10 题目：filemix 协议</h2>
+      <pre><code>filemix &lt;dir&gt;
+
+TYPE	COUNT
+(none)	1
+.env	1
+.go	3
+TOTAL	4</code></pre>
+      <ul>
+        <li>递归；普通文件；包含隐藏项。</li>
+        <li>扩展名转小写；无扩展名归为 <code>(none)</code>。</li>
+        <li>数量降序，同数量类型升序。</li>
+        <li>用户输入或遍历错误：stderr + 非零退出码。</li>
+        <li>不能用第三方依赖；测试、race、vet 都要通过。</li>
+      </ul>
+    </section>
+
+    <section class="reference-block">
+      <h2>11 遍历与排序骨架</h2>
+      <pre><code>counts := make(map[string]int)
+err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+    if err != nil {
+        return err
+    }
+    if d.Type()&os.ModeSymlink != 0 || d.IsDir() {
+        return nil
+    }
+    if !d.Type().IsRegular() {
+        return nil
+    }
+
+    ext := strings.ToLower(filepath.Ext(path))
+    if ext == "" {
+        ext = "(none)"
+    }
+    counts[ext]++
+    return nil
+})</code></pre>
+      <pre><code>rows := make([]row, 0, len(counts))
+for ext, n := range counts {
+    rows = append(rows, row{ext: ext, count: n})
+}
+
+sort.Slice(rows, func(i, j int) bool {
+    if rows[i].count != rows[j].count {
+        return rows[i].count &gt; rows[j].count
+    }
+    return rows[i].ext &lt; rows[j].ext
+})</code></pre>
+    </section>
+
+    <section class="reference-block">
+      <h2>12 入口与错误边界</h2>
+      <pre><code>func main() {
+    if err := run(os.Args[1:]); err != nil {
+        fmt.Fprintf(os.Stderr, "filemix: %v\n", err)
+        os.Exit(1)
+    }
+}
+
+func run(args []string) error {
+    if len(args) != 1 {
+        return fmt.Errorf("usage: filemix &lt;dir&gt;")
+    }
+
+    info, err := os.Stat(args[0])
+    if err != nil {
+        return fmt.Errorf("stat %s: %w", args[0], err)
+    }
+    if !info.IsDir() {
+        return fmt.Errorf("%s is not a directory", args[0])
+    }
+
+    return nil
+}</code></pre>
+      <p><code>os.Exit</code> 会跳过 defer，所以把可测试逻辑放进 <code>run</code>，main 只负责错误边界。</p>
+    </section>
+
+    <section class="reference-block">
+      <h2>13 官方来源</h2>
+      <ul>
+        <li><a href="https://go.dev/tour/">A Tour of Go</a>：第一遍语法与并发。</li>
+        <li><a href="https://go.dev/doc/effective_go">Effective Go</a>：惯用写法。</li>
+        <li><a href="https://pkg.go.dev/path/filepath">path/filepath</a>：题目遍历 API。</li>
+        <li><a href="https://go.dev/doc/articles/race_detector">Race Detector</a>：竞态检查。</li>
+      </ul>
+      <p><a href="../lessons/0002-stage1-go-minimum-and-cli-challenge.html">回到课程与 filemix 过关题</a></p>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="后端阶段 0 最低限度速查：命令、Git、编辑器、JSON/YAML/Markdown、curl、Network 和 Docker。">
+  <title>阶段 0 最低限度速查</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body class="reference-page">
+  <header class="site-header">
+    <div class="wrap">
+      <div class="masthead">
+        <strong>阶段 0 · 速查</strong>
+        <span>只打印过关所需</span>
+      </div>
+      <h1 class="reference-title">七类工具，一张过线表</h1>
+      <p class="lede">卡住时查动作，不要顺手扩展成原理课。</p>
+    </div>
+  </header>
+
+  <main class="wrap reference-grid">
+    <section class="reference-block">
+      <h2>01 命令行</h2>
+      <pre><code>pwd
+cd ./项目目录
+ls -al
+touch notes.txt
+cat notes.txt
+printf 'hello\n' &gt; notes.txt
+cp a.txt b.txt
+mv a.txt backup/a.txt
+rm notes.txt
+cat app.log | grep "ERROR"
+ps aux
+ss -lntp
+echo "$JAVA_HOME"
+export GOPATH="$HOME/go"</code></pre>
+    </section>
+
+    <section class="reference-block">
+      <h2>02 Git 最低闭环</h2>
+      <pre><code>git clone &lt;url&gt;
+
+git init
+git add .
+git commit -m "init"
+git branch -M main
+git remote add origin &lt;url&gt;
+git push -u origin main
+
+git switch -c feature/x
+git add .
+git commit -m "feat: x"
+git switch main
+git merge feature/x
+git push</code></pre>
+      <p>冲突：改到最终内容，删标记，<code>git add .</code>，<code>git commit</code>，<code>git push</code>。</p>
+    </section>
+
+    <section class="reference-block">
+      <h2>03 编辑器</h2>
+      <ul>
+        <li>装 VS Code + Go 扩展。</li>
+        <li><code>F12</code> 跳定义。</li>
+        <li>行号左侧点红点，按 <code>F5</code> 断点调试。</li>
+        <li><code>Shift + Alt + F</code> 格式化。</li>
+      </ul>
+    </section>
+
+    <section class="reference-block">
+      <h2>04 JSON / YAML / Markdown</h2>
+      <pre><code>{"user":{"id":7,"roles":["admin"],"active":true}}
+
+server:
+  port: 8080
+  hosts:
+    - localhost
+
+# Markdown 标题
+- 列表
+`行内代码`
+[链接](https://example.com)</code></pre>
+      <p>JSON 双引号，不能有尾逗号。YAML 用空格缩进，不用 Tab。</p>
+    </section>
+
+    <section class="reference-block">
+      <h2>05 curl</h2>
+      <pre><code>curl -X POST "http://localhost:8080/api/users" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer &lt;token&gt;" \
+  -d '{"name":"Ada"}'</code></pre>
+      <p>看清方法、URL、Header、Body、Token 五件事。</p>
+    </section>
+
+    <section class="reference-block">
+      <h2>06 Network</h2>
+      <ul>
+        <li><strong>URL：</strong>请求了哪个接口。</li>
+        <li><strong>Method：</strong>GET / POST / PUT / DELETE。</li>
+        <li><strong>Status：</strong>2xx / 4xx / 5xx。</li>
+        <li><strong>Time：</strong>总耗时。</li>
+        <li><strong>Headers、Payload、Response：</strong>带什么、发什么、回什么。</li>
+      </ul>
+    </section>
+
+    <section class="reference-block">
+      <h2>07 Docker MySQL</h2>
+      <pre><code>docker run -d \
+  --name mysql-stage0 \
+  -p 3307:3306 \
+  -e MYSQL_ROOT_PASSWORD=stage0 \
+  -v mysql_stage0:/var/lib/mysql \
+  mysql:8.4
+
+docker exec -it mysql-stage0 mysql -uroot -pstage0
+
+CREATE DATABASE stage0;
+USE stage0;
+CREATE TABLE users (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  name VARCHAR(50) NOT NULL
+);</code></pre>
+      <p><code>-p 宿主端口:容器端口</code>。失败先看 <code>docker logs</code>。</p>
+    </section>
+
+    <section class="reference-block">
+      <h2>三条过关线</h2>
+      <ul>
+        <li>Git 本地提交能推到远程，冲突能收口。</li>
+        <li>Docker 能起 MySQL，连上后建库建表。</li>
+        <li>Network 中能读懂一条请求。</li>
+      </ul>
+      <p><a href="../lessons/0001-stage0-environment-toolkit.html">回到课程与三道过关题</a></p>
+    </section>
+  </main>
+</body>
+</html>

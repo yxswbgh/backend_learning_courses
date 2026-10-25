@@ -1,0 +1,582 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="后端路线阶段 1 的 Go-only 最低过关课：基础、并发、工程、标准库，以及 filemix 命令行小工具题目。">
+  <title>阶段 1：用 Go 打通最低过关线</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <div class="masthead">
+        <strong>后端就业路线 · 阶段 1</strong>
+        <span>Go-only 最低过关 / 4 类能力</span>
+      </div>
+      <div class="hero">
+        <div>
+          <p class="eyebrow">只学 Go，只学必须掌握</p>
+          <h1>用 Go 打通第一道语言关</h1>
+          <p class="lede">这节不铺开 Java，也不追 GMP、反射和编译器。目标只有一个：掌握阶段 1 路线表里的 Go 最低集合，并独立完成目录文件类型统计工具。</p>
+        </div>
+        <ul class="hero-facts" aria-label="本课范围">
+          <li><span>Go 类别</span><strong>04</strong></li>
+          <li><span>适用过关线</span><strong>01</strong></li>
+          <li><span>Java 内容</span><strong>00</strong></li>
+        </ul>
+      </div>
+    </div>
+  </header>
+
+  <nav class="route-nav" aria-label="阶段 1 Go 最低集合">
+    <div class="wrap">
+      <ol>
+        <li><a href="#scope">00 范围</a></li>
+        <li><a href="#basics">01 基础</a></li>
+        <li><a href="#concurrency">02 并发</a></li>
+        <li><a href="#engineering">03 工程</a></li>
+        <li><a href="#stdlib">04 标准库</a></li>
+        <li><a href="#challenge">过关题</a></li>
+      </ol>
+    </div>
+  </nav>
+
+  <main>
+    <section class="brief" id="scope" aria-labelledby="scope-title">
+      <div class="wrap brief-grid">
+        <div class="section-index">范围校准 / 00</div>
+        <div>
+          <h2 id="scope-title">先删掉不考的内容</h2>
+          <p>路线给了四项 Go 能力，以及三条过关标准。你是 Go-only 学习，所以保留第一项过关标准，删除两项 Java 相关标准。四类内部的“可以先跳过”也不进入课程。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="scope-band" aria-labelledby="scope-map-title">
+      <div class="wrap scope-panel">
+        <div class="section-index">保留清单 / 04</div>
+        <div>
+          <h2 id="scope-map-title">四类各留一个最小闭环</h2>
+          <div class="scope-grid">
+            <div class="scope-item">
+              <b>基础</b>
+              <span>零值、slice/map、struct、接口、错误包装、defer/panic/recover。</span>
+            </div>
+            <div class="scope-item">
+              <b>并发</b>
+              <span>goroutine、channel、select、同步原语、context 取消链。</span>
+            </div>
+            <div class="scope-item">
+              <b>工程</b>
+              <span>module、包、格式化与 lint、表格测试、竞态检查、benchmark。</span>
+            </div>
+            <div class="scope-item">
+              <b>标准库</b>
+              <span>HTTP、JSON、时间、文件系统、IO 抽象和数据库接口。</span>
+            </div>
+          </div>
+          <p class="decision-note"><strong>不教：</strong>Java 全部内容、反射、unsafe、汇编、sync.Pool 源码、GMP 调度细节、编译器和链接器。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="lesson-section" id="basics" aria-labelledby="basics-title">
+      <div class="section-label">
+        <span class="section-number">CATEGORY 01</span>
+        <h2 id="basics-title">语言基础</h2>
+        <span class="minimum-badge">值、容器、接口、错误</span>
+      </div>
+      <div class="lesson-body">
+        <p>Go 先用显式的值语义建立一个稳定心智：变量有零值，容器有共享行为，接口看方法，错误靠返回值。</p>
+
+        <div class="concept-grid">
+          <article class="concept">
+            <span class="mini-label">Zero value</span>
+            <h3>声明后已经是可用起点</h3>
+            <p>数字是 <code>0</code>，字符串是 <code>""</code>，布尔是 <code>false</code>，指针、slice、map、channel、函数和接口是 <code>nil</code>。</p>
+            <p>nil slice 可 <code>append</code>；nil map 可读但写入会 panic，写之前先 <code>make</code>。</p>
+          </article>
+
+          <article class="concept">
+            <span class="mini-label">Slice</span>
+            <h3>指针 + 长度 + 容量</h3>
+            <p><code>append</code> 在容量够时可能复用底层数组，容量不够时才分配新数组。共享底层数组会让“另一个 slice 的修改”出现在当前值里。</p>
+            <p>需要独立副本时，显式复制：<code>append([]int(nil), a...)</code>。</p>
+          </article>
+
+          <article class="concept">
+            <span class="mini-label">Map</span>
+            <h3>查找用 comma-ok</h3>
+            <p><code>v, ok := m[k]</code> 能区分“零值”和“键不存在”。复制 map 变量会共享同一份底层数据，不是深拷贝。</p>
+            <p>map 的遍历顺序不保证；元素增多后运行时会自动扩容并重新分布键，所以不要依赖内部位置。</p>
+          </article>
+
+          <article class="concept">
+            <span class="mini-label">Struct &amp; method</span>
+            <h3>方法接收者决定修改是否可见</h3>
+            <p>值接收者拿到副本；需要修改或避免大对象复制时用指针接收者。一个类型和它的方法必须定义在同一包中。</p>
+          </article>
+        </div>
+
+        <pre><code>var counts map[string]int // nil
+counts = make(map[string]int)
+
+type User struct {
+    Name string
+}
+
+func (u *User) Rename(name string) {
+    u.Name = name
+}
+
+func (u User) Describe() string {
+    return u.Name
+}
+
+type Describer interface {
+    Describe() string
+}
+
+var _ Describer = User{} // 编译期检查：User 是否满足 Describer</code></pre>
+
+        <h3>接口是隐式实现</h3>
+        <p>类型不需要写 <code>implements</code>。只要方法集合满足接口，它就自动实现接口。优先定义“使用方真正需要的小接口”，例如 <code>io.Writer</code>，不要为了抽象先造大接口。</p>
+
+        <h3>错误要带上下文，也要保留因果链</h3>
+        <pre><code>func loadConfig(path string) ([]byte, error) {
+    data, err := os.ReadFile(path)
+    if err != nil {
+        return nil, fmt.Errorf("load config %q: %w", path, err)
+    }
+    return data, nil
+}
+
+if errors.Is(err, fs.ErrNotExist) {
+    // 调用方仍能判断底层原因
+}</code></pre>
+        <p><code>fmt.Errorf(..., %w, err)</code> 包装错误；<code>errors.Is</code> 判断因果链中的某个错误；<code>errors.As</code> 取出链中的特定错误类型。</p>
+
+        <h3>defer 收尾，panic 只处理意外</h3>
+        <pre><code>func closeFile(f *os.File) {
+    defer f.Close() // 后注册先执行，常用于释放资源
+}
+
+func guard() {
+    defer func() {
+        if r := recover(); r != nil {
+            log.Printf("recovered: %v", r)
+        }
+    }()
+}</code></pre>
+        <p>普通失败返回 <code>error</code>，不要拿 panic 当控制流。recover 只在 defer 中有效，适合守住进程边界，不适合掩盖错误。</p>
+
+        <p class="boundary"><strong>到此为止：</strong>能解释例子并写出自己的 struct、接口、包装错误和 defer 收尾即可。不进入反射和 unsafe。</p>
+        <div class="two-col">
+          <a class="source" href="https://go.dev/tour/">主来源：A Tour of Go</a>
+          <a class="source" href="https://go.dev/blog/go1.13-errors">补充：Go 官方错误包装</a>
+        </div>
+
+        <details class="recall">
+          <summary>合上笔记：为什么 nil slice 能 append，nil map 却不能直接写？</summary>
+          <div class="recall-body">
+            <p><code>append</code> 能为 nil slice 分配新底层数组；map 写入需要已初始化的哈希表，所以无索引赋值前要 <code>make(map[...]...)</code>。</p>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <section class="lesson-section" id="concurrency" aria-labelledby="concurrency-title">
+      <div class="section-label">
+        <span class="section-number">CATEGORY 02</span>
+        <h2 id="concurrency-title">并发</h2>
+        <span class="minimum-badge">启动、通信、取消</span>
+      </div>
+      <div class="lesson-body">
+        <p>最低目标不是背调度器，而是能安全启动工作、等待完成、传值和取消。并发只是工具，题目不需要时就不要强塞。</p>
+
+        <div class="concept-grid">
+          <article class="concept">
+            <span class="mini-label">Goroutine</span>
+            <h3>启动容易，退出要负责</h3>
+            <p><code>go fn()</code> 异步启动。main 返回时进程结束，不会等待所有 goroutine；每个长期运行的任务都需要停止条件。</p>
+          </article>
+
+          <article class="concept">
+            <span class="mini-label">Channel</span>
+            <h3>无缓冲同步，有缓冲排队</h3>
+            <p>无缓冲发送要等接收方；有缓冲只在缓冲区满时阻塞。只由发送方关闭 channel，接收方用 <code>v, ok := &lt;-ch</code> 判断是否关闭。</p>
+          </article>
+
+          <article class="concept">
+            <span class="mini-label">Select</span>
+            <h3>等待多个通信点</h3>
+            <p>多个 case 同时就绪时随机选一个。<code>default</code> 让 select 立即返回，可用于非阻塞检查；nil channel 的收发会一直阻塞。</p>
+          </article>
+
+          <article class="concept">
+            <span class="mini-label">Sync</span>
+            <h3>共享状态先加锁，再等待</h3>
+            <p><code>Mutex</code> 保护共享写入；<code>WaitGroup.Add</code> 必须在启动 goroutine 前完成；<code>Once.Do</code> 保证初始化只执行一次。</p>
+          </article>
+        </div>
+
+        <pre><code>var (
+    mu   sync.Mutex
+    once sync.Once
+)
+
+func add(x *int, delta int) {
+    mu.Lock()
+    defer mu.Unlock()
+    *x += delta
+}
+
+var wg sync.WaitGroup
+for _, item := range items {
+    wg.Add(1)
+    go func(value int) {
+        defer wg.Done()
+        add(&total, value)
+    }(item)
+}
+wg.Wait()</code></pre>
+        <p><code>defer wg.Done()</code> 避免中途 return 漏掉计数。若多个 goroutine 的返回值要汇总，优先用带缓冲 channel 或加锁的局部结果，不要在多个 goroutine 里无保护地写同一个 map。</p>
+
+        <h3>context 负责传递取消信号</h3>
+        <pre><code>ctx, cancel := context.WithTimeout(parentCtx, 2*time.Second)
+defer cancel()
+
+select {
+case result := &lt;-work:
+    return result, nil
+case &lt;-ctx.Done():
+    return nil, ctx.Err()
+}</code></pre>
+        <p>把 <code>ctx</code> 放在函数第一个参数并向下传递。取消是协作式信号，不会强行杀死 goroutine；受控任务需要在等待或循环处检查 <code>ctx.Done()</code>。</p>
+
+        <p class="boundary"><strong>到此为止：</strong>能解释无缓冲/有缓冲 channel、用 select 收口、正确放置 WaitGroup.Add、向下传 context 即可。不进入 GMP 细节。</p>
+        <div class="two-col">
+          <a class="source" href="https://go.dev/tour/concurrency/1">主来源：A Tour of Go · Concurrency</a>
+          <a class="source" href="https://pkg.go.dev/context">补充：context 标准库</a>
+        </div>
+
+        <details class="recall">
+          <summary>合上笔记：为什么 WaitGroup.Add 不能放在 goroutine 内部？</summary>
+          <div class="recall-body">
+            <p>如果 Wait 已先执行，内部 Add 可能还没发生，Wait 就会提前返回。先 Add，再启动 goroutine，才能稳定等待全部任务登记完成。</p>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <section class="lesson-section" id="engineering" aria-labelledby="engineering-title">
+      <div class="section-label">
+        <span class="section-number">CATEGORY 03</span>
+        <h2 id="engineering-title">工程化</h2>
+        <span class="minimum-badge">能建、能测、能检查</span>
+      </div>
+      <div class="lesson-body">
+        <p>这一段把“会写语法”变成“能交付一个小项目”。最低闭环是 module、包、格式化、测试、竞态检查和一次 benchmark。</p>
+
+        <h3>从 module 和包开始</h3>
+        <pre><code>mkdir filemix
+cd filemix
+go mod init example.com/filemix
+
+gofmt -w $(find . -name '*.go' -type f)
+go vet ./...
+golangci-lint run ./...</code></pre>
+        <p><code>go.mod</code> 记录模块路径和依赖。包名短、全小写、表达职责；一个目录内只放一个包。先保持 <code>package main</code> 与一个辅助包就够，不要为了“架构感”拆很多层。</p>
+
+        <h3>测试先写表，再写多组输入</h3>
+        <pre><code>func TestCountByExt(t *testing.T) {
+    tests := []struct {
+        name string
+        files []string
+        want map[string]int
+    }{
+        {name: "mixed", files: []string{"a.go", "b.GO"}, want: map[string]int{".go": 2}},
+    }
+
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            got := countByExt(tt.files)
+            if !reflect.DeepEqual(got, tt.want) {
+                t.Fatalf("got %v, want %v", got, tt.want)
+            }
+        })
+    }
+}</code></pre>
+        <p>表格驱动测试把输入、期望和用例名放在同一张表里。`reflect.DeepEqual` 在测试里比较 map 可以接受；业务代码仍优先写清楚比较逻辑。</p>
+
+        <h3>竞态检查与 benchmark</h3>
+        <pre><code>go test -race ./...
+go test -bench . -benchmem ./...</code></pre>
+        <p><code>-race</code> 会在运行时探测实际走到的数据竞争，不是静态证明。benchmark 用固定输入循环 <code>b.N</code> 次，报告每次操作耗时和内存分配：</p>
+        <pre><code>func BenchmarkCountByExt(b *testing.B) {
+    files := []string{"a.go", "b.md", "c.go"}
+    b.ResetTimer()
+    for i := 0; i &lt; b.N; i++ {
+        _ = countByExt(files)
+    }
+}</code></pre>
+
+        <p class="boundary"><strong>到此为止：</strong>能初始化 module、用 gofmt/vet/lint 检查、写表格驱动测试、跑 race 和 benchmark 即可。不研究编译优化或链接器。</p>
+        <div class="two-col">
+          <a class="source" href="https://go.dev/ref/mod">主来源：Go Modules Reference</a>
+          <a class="source" href="https://go.dev/doc/articles/race_detector">补充：Race Detector</a>
+        </div>
+
+        <details class="recall">
+          <summary>合上笔记：验收一个小 Go 项目，最少跑哪四条命令？</summary>
+          <div class="recall-body">
+            <p>格式化检查或写入、<code>go vet ./...</code>、<code>go test -race ./...</code>、<code>go build ./...</code>。需要性能判断时再加 <code>go test -bench . -benchmem ./...</code>。</p>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <section class="lesson-section" id="stdlib" aria-labelledby="stdlib-title">
+      <div class="section-label">
+        <span class="section-number">CATEGORY 04</span>
+        <h2 id="stdlib-title">常用标准库</h2>
+        <span class="minimum-badge">会查、会用、会收资源</span>
+      </div>
+      <div class="lesson-body">
+        <p>这里只建立“遇到任务知道去哪个包”的最低地图。不会的 API 查 <code>pkg.go.dev</code>，不要背函数表。</p>
+
+        <table class="command-table">
+          <thead>
+            <tr><th>任务</th><th>必须会的最小 API</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>net/http</code></td>
+              <td><code>NewServeMux</code>、<code>HandleFunc</code>、<code>ListenAndServe</code>；handler 写状态码和 body。</td>
+            </tr>
+            <tr>
+              <td><code>encoding/json</code></td>
+              <td><code>Marshal</code> / <code>Unmarshal</code>，或流式 <code>Encoder</code> / <code>Decoder</code>；结构体 tag 控制字段名。</td>
+            </tr>
+            <tr>
+              <td><code>time</code></td>
+              <td><code>time.Now</code>、<code>time.Since</code>、<code>time.Duration</code>、<code>time.NewTimer</code> / <code>time.NewTicker</code>。</td>
+            </tr>
+            <tr>
+              <td><code>os</code></td>
+              <td><code>os.Args</code>、<code>ReadFile</code> / <code>WriteFile</code>、<code>os.Stderr</code>、<code>os.Exit</code>。</td>
+            </tr>
+            <tr>
+              <td><code>io</code></td>
+              <td><code>Reader</code> / <code>Writer</code>、<code>io.Copy</code>；泛用接口让函数不绑定具体文件。</td>
+            </tr>
+            <tr>
+              <td><code>database/sql</code></td>
+              <td><code>Open</code>、<code>PingContext</code>、<code>QueryContext</code>、<code>QueryRowContext</code>、<code>ExecContext</code>、<code>Scan</code>、<code>Close</code>。</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>HTTP 与 JSON 的最低组合</h3>
+        <pre><code>mux := http.NewServeMux()
+mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+    w.Header().Set("Content-Type", "application/json")
+    _ = json.NewEncoder(w).Encode(map[string]bool{"ok": true})
+})
+
+log.Fatal(http.ListenAndServe(":8080", mux))</code></pre>
+        <p>没有显式写状态码时默认是 200。<code>Encoder.Encode</code> 直接写响应流，适合 handler；<code>Marshal</code> 适合先拿到字节。</p>
+
+        <h3>文件、IO 与数据库的共同习惯</h3>
+        <pre><code>data, err := os.ReadFile(path)
+if err != nil {
+    return fmt.Errorf("read %s: %w", path, err)
+}
+
+if _, err := io.Copy(dst, src); err != nil {
+    return fmt.Errorf("copy: %w", err)
+}
+
+db, err := sql.Open("driver-name", dsn)
+if err != nil {
+    return err
+}
+defer db.Close()
+
+if err := db.PingContext(ctx); err != nil {
+    return fmt.Errorf("ping database: %w", err)
+}</code></pre>
+        <p><code>sql.Open</code> 不一定立即建立连接，所以要 <code>PingContext</code>。查询返回的 <code>*sql.Rows</code> 必须 <code>Close</code>，并检查 <code>rows.Err()</code>。数据库驱动在进入实际数据库阶段时再选。</p>
+
+        <p class="boundary"><strong>到此为止：</strong>能查文档并组合这些 API，处理返回错误和资源释放即可。不背冷门包，也不在本阶段展开 HTTP 原理。</p>
+        <div class="two-col">
+          <a class="source" href="https://pkg.go.dev/net/http">主来源：net/http 文档</a>
+          <a class="source" href="https://pkg.go.dev/path/filepath">题目补充：path/filepath 文档</a>
+        </div>
+
+        <details class="recall">
+          <summary>合上笔记：为什么 sql.Open 成功后还要 PingContext？</summary>
+          <div class="recall-body">
+            <p><code>sql.Open</code> 主要准备连接池配置，通常不会证明数据库可达；<code>PingContext</code> 才实际检查连接是否可用，并受 context 取消控制。</p>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <section class="challenge-band" id="challenge" aria-labelledby="challenge-title">
+      <div class="wrap">
+        <div class="challenge-head">
+          <div class="section-index">阶段过关题 / 01</div>
+          <div>
+            <h2 id="challenge-title">写一个 <code>filemix</code></h2>
+            <p>题目对应路线阶段 1 的唯一 Go 过关标准：用 Go 写一个命令行小工具，统计目录下文件类型分布。这里的“类型”明确指文件扩展名。</p>
+          </div>
+        </div>
+
+        <div class="challenge-layout">
+          <aside class="challenge-aside">
+            <strong>交付物</strong>
+            <p>一个可构建的 Go 项目：<code>main.go</code>、必要的辅助文件、至少一个 <code>_test.go</code>。</p>
+            <strong>环境</strong>
+            <p>在 Linux 或 WSL 的 shell 中构建并运行。只能使用 Go 标准库。</p>
+            <strong>完成定义</strong>
+            <p>源码、测试、验收命令都通过，并能解释关键选择和错误处理。</p>
+          </aside>
+
+          <div class="challenge-main">
+            <h3>命令行为</h3>
+            <pre><code>filemix &lt;dir&gt;</code></pre>
+            <ul class="challenge-list">
+              <li>参数必须恰好是一个目录；缺失、多余或路径不是目录时，错误写入 stderr，进程以非零状态退出。</li>
+              <li>递归遍历该目录，统计所有普通文件；包含隐藏文件和隐藏目录；遇到读取错误就整体失败，不输出半份结果。</li>
+              <li>扩展名统一转小写后合并，例如 <code>.PNG</code> 与 <code>.png</code> 算同一类；没有扩展名的文件归入 <code>(none)</code>。</li>
+              <li>先按数量从多到少排序；数量相同则按类型字符串升序排序。</li>
+              <li>最后输出 <code>TOTAL</code> 行，数值是普通文件总数。目录和符号链接都不计入。</li>
+            </ul>
+
+            <h3>输出协议</h3>
+            <p>先输出表头 <code>TYPE&lt;TAB&gt;COUNT</code>，每个类型一行，字段之间是一个制表符。空格只用于下面的视觉对齐，判题时忽略行尾空白。</p>
+            <pre><code>TYPE    COUNT
+(none)  1
+.env    1
+.gz     1
+.json   1
+.png    1
+.go     3
+TOTAL   8</code></pre>
+            <p class="challenge-rule">运行参数错误时不要打印空表；把具体错误写到 stderr。示例：<code>filemix: open demo: permission denied</code>。</p>
+
+            <h3>验收夹具</h3>
+            <p>在项目根目录执行下面这段 Linux shell，创建固定输入：</p>
+            <pre><code>mkdir -p demo/sub
+printf 'package a\n' &gt; demo/a.go
+printf 'package c\n' &gt; demo/b.go
+printf 'package d\n' &gt; demo/sub/c.go
+printf '# demo\n' &gt; demo/README
+printf '{}\n' &gt; demo/data.json
+printf 'x\n' &gt; demo/archive.tar.gz
+printf 'PORT=8080\n' &gt; demo/.env
+printf 'png\n' &gt; demo/sub/logo.PNG</code></pre>
+
+            <p>然后构建并检查输出：</p>
+            <pre><code>GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -o filemix .
+./filemix ./demo
+./filemix ./missing ; test $? -ne 0</code></pre>
+
+            <h3>必须提交的验收证据</h3>
+            <ul class="acceptance-list">
+              <li>
+                <label>
+                  <input type="checkbox" data-acceptance="module">
+                  <span><code>go.mod</code> 可构建项目，且没有第三方依赖。</span>
+                </label>
+              </li>
+              <li>
+                <label>
+                  <input type="checkbox" data-acceptance="recursive">
+                  <span>递归、隐藏文件、无扩展名、大小写扩展名四类情况都得到题目规定的统计结果。</span>
+                </label>
+              </li>
+              <li>
+                <label>
+                  <input type="checkbox" data-acceptance="sort">
+                  <span>数量降序、同数量类型升序、表头与 <code>TOTAL</code> 行均符合协议。</span>
+                </label>
+              </li>
+              <li>
+                <label>
+                  <input type="checkbox" data-acceptance="errors">
+                  <span>参数错误和遍历错误走非零退出码，错误只写 stderr，不 panic。</span>
+                </label>
+              </li>
+              <li>
+                <label>
+                  <input type="checkbox" data-acceptance="tests">
+                  <span>至少有表格驱动测试，覆盖多个统计用例；测试随项目提交。</span>
+                </label>
+              </li>
+              <li>
+                <label>
+                  <input type="checkbox" data-acceptance="quality">
+                  <span><code>gofmt</code>、<code>go vet ./...</code>、<code>go test -race ./...</code> 全部通过。</span>
+                </label>
+              </li>
+              <li>
+                <label>
+                  <input type="checkbox" data-acceptance="linux">
+                  <span>Linux 环境完成构建和运行，提交命令输出与关键实现说明。</span>
+                </label>
+              </li>
+            </ul>
+            <div class="challenge-progress">
+              <span id="challenge-progress-line" aria-live="polite">验收项 0 / 7</span>
+              <button class="reset-progress" id="reset-challenge-progress" type="button">重置勾选</button>
+            </div>
+
+            <h3>评分</h3>
+            <table class="rubric">
+              <thead>
+                <tr><th>维度</th><th>看什么</th><th>分值</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>可构建</td><td>module、Linux 构建、命令行入口。</td><td>20</td></tr>
+                <tr><td>统计正确</td><td>递归、普通文件、扩展名归一、`(none)`。</td><td>25</td></tr>
+                <tr><td>输出稳定</td><td>排序、TOTAL、制表符协议。</td><td>25</td></tr>
+                <tr><td>错误边界</td><td>参数校验、stderr、退出码、资源释放。</td><td>15</td></tr>
+                <tr><td>工程闭环</td><td>表格测试、race、gofmt、vet。</td><td>15</td></tr>
+              </tbody>
+            </table>
+
+            <h3>判负条件</h3>
+            <ul class="challenge-list">
+              <li>只扫描当前目录，不递归。</li>
+              <li>把 <code>README</code> 误算成某种扩展名，或漏掉隐藏文件。</li>
+              <li>把示例结果硬编码，或引入第三方库完成核心逻辑。</li>
+              <li>遇到用户输入错误直接 panic，或把错误写到 stdout。</li>
+              <li>没有测试，或用并发掩盖单线程即可完成的简单任务。</li>
+            </ul>
+
+            <p class="challenge-rule"><strong>提示：</strong><code>filepath.WalkDir</code> 适合递归遍历，<code>DirEntry.Type()</code> 可判断普通文件与符号链接，<code>filepath.Ext</code> 取扩展名，<code>strings.ToLower</code> 归一。先让统计函数返回纯数据，再把打印留在命令行入口。</p>
+            <p><a class="source" href="https://pkg.go.dev/path/filepath#WalkDir">题目必查：filepath.WalkDir</a> · <a class="source" href="../reference/stage1-go-minimum-reference.html">打开阶段 1 速查表</a></p>
+            <p>卡住时直接带着最小复现、命令、完整报错和当前代码问老师。没有通过全部验收项，就不进入阶段 2。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="lesson-footer">
+    <div class="wrap footer-grid">
+      <p>先按四节完成口述和最小代码，再去做 <code>filemix</code>。如果某个语法点没有在题目里出现，不代表要展开它；阶段 1 的目标是快速进入 Web 和项目。</p>
+      <div class="footer-links">
+        <a href="../reference/stage1-go-minimum-reference.html">阶段 1 速查表</a>
+        <a href="../后端就业学习路线-全面版.md">回到路线原文</a>
+        <a href="./0001-stage0-environment-toolkit.html">阶段 0 复习</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="../assets/stage1.js"></script>
+</body>
+</html>

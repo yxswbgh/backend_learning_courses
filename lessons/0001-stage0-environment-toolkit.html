@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="后端就业路线阶段 0 的最低过关课程：命令行、Git、编辑器、数据格式、接口调试、Network 与 Docker。">
+  <title>阶段 0：先把环境卡点清掉</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <div class="masthead">
+        <strong>后端就业路线 · 阶段 0</strong>
+        <span>环境与工具预备 / 4 天</span>
+      </div>
+      <div class="hero">
+        <div>
+          <p class="eyebrow">只学过关所需</p>
+          <h1>先把环境卡点清掉</h1>
+          <p class="lede">这节只回答一件事：遇到 Git、Docker 和浏览器请求时，你至少要会做什么。原理、选型和进阶操作都留到后面的阶段。</p>
+        </div>
+        <ul class="hero-facts" aria-label="本课范围">
+          <li><span>工具类别</span><strong>07</strong></li>
+          <li><span>官方过关线</span><strong>03</strong></li>
+          <li><span>扩展主题</span><strong>00</strong></li>
+        </ul>
+      </div>
+    </div>
+  </header>
+
+  <nav class="route-nav" aria-label="阶段 0 类别">
+    <div class="wrap">
+      <ol>
+        <li><a href="#cli">01 命令行</a></li>
+        <li><a href="#git">02 Git</a></li>
+        <li><a href="#editor">03 编辑器</a></li>
+        <li><a href="#data">04 数据格式</a></li>
+        <li><a href="#requests">05 接口调试</a></li>
+        <li><a href="#network">06 Network</a></li>
+        <li><a href="#docker">07 Docker</a></li>
+      </ol>
+    </div>
+  </nav>
+
+  <main>
+    <section class="brief" aria-labelledby="brief-title">
+      <div class="wrap brief-grid">
+        <div class="section-index">通过线 / 00</div>
+        <div>
+          <h2 id="brief-title">阶段 0 的毕业条件只有三条</h2>
+          <ul class="pass-list">
+            <li>
+              <b>Git 推到远程</b>
+              <span>本地项目有提交，远程有仓库；发生冲突时能收口并继续推送。</span>
+            </li>
+            <li>
+              <b>Docker 连上数据库</b>
+              <span>MySQL 容器能启动，能从宿主连接，并执行建库、建表 SQL。</span>
+            </li>
+            <li>
+              <b>读懂一条请求</b>
+              <span>在 Network 面板说清方法、地址、状态码、耗时和响应内容。</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="lesson-section" id="cli" aria-labelledby="cli-title">
+      <div class="section-label">
+        <span class="section-number">CATEGORY 01</span>
+        <h2 id="cli-title">命令行</h2>
+        <span class="minimum-badge">定位与排查</span>
+      </div>
+      <div class="lesson-body">
+        <p>你只需要在 Linux 终端里找到文件、改内容、筛选输出、设置本次会话的环境变量，以及查出端口被哪个进程占了。</p>
+        <table class="command-table">
+          <thead>
+            <tr><th>任务</th><th>最低命令</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>看当前位置 / 进入目录 / 列文件</td><td><code>pwd</code>、<code>cd 路径</code>、<code>ls -al</code></td></tr>
+            <tr><td>新建 / 读取 / 改写 / 删除文件</td><td><code>touch notes.txt</code>、<code>cat notes.txt</code>、<code>printf 'hello\n' &gt; notes.txt</code>、<code>rm notes.txt</code></td></tr>
+            <tr><td>复制 / 移动</td><td><code>cp a.txt b.txt</code>、<code>mv a.txt backup/a.txt</code></td></tr>
+            <tr><td>管道筛选文本</td><td><code>cat app.log | grep "ERROR"</code></td></tr>
+            <tr><td>读取 / 设置环境变量</td><td><code>echo "$JAVA_HOME"</code>、<code>export GOPATH="$HOME/go"</code></td></tr>
+            <tr><td>查进程 / 查端口</td><td><code>ps aux</code>、<code>ss -lntp</code></td></tr>
+          </tbody>
+        </table>
+        <p>端口占用就用一条链收口：先查占用者，再确认进程身份。</p>
+        <pre><code>sudo ss -lntp | grep ':8080'
+
+ps -fp &lt;PID&gt;</code></pre>
+        <p class="boundary"><strong>到此为止：</strong>不学 Linux 权限模型、shell 脚本或 systemd。知道怎么执行上面的命令就够了。</p>
+        <div class="two-col">
+          <a class="source" href="https://www.gnu.org/software/coreutils/manual/">来源：GNU Coreutils 手册</a>
+          <a class="source" href="https://man7.org/linux/man-pages/man8/ss.8.html">来源：Linux man-pages · ss</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="lesson-section" id="git" aria-labelledby="git-title">
+      <div class="section-label">
+        <span class="section-number">CATEGORY 02</span>
+        <h2 id="git-title">Git</h2>
+        <span class="minimum-badge">提交、同步、收冲突</span>
+      </div>
+      <div class="lesson-body">
+        <p>最低流程是：初始化或克隆，提交本地改动，推到远程；有分支就合并；冲突时改到最终版本，再提交。</p>
+        <h3>把本地项目送上去</h3>
+        <pre><code>git clone &lt;远程仓库地址&gt;
+
+git init
+git add .
+git commit -m "chore: initialize project"
+git branch -M main
+git remote add origin &lt;远程仓库地址&gt;
+git push -u origin main</code></pre>
+        <h3>日常提交与分支</h3>
+        <pre><code>git status
+git diff
+git switch -c feature/stage0
+git add .
+git commit -m "feat: add stage0 practice"
+git switch main
+git merge feature/stage0</code></pre>
+        <h3>冲突的标准收口</h3>
+        <pre><code>git pull origin main
+# 编辑冲突文件，保留最终内容，删除 &lt;&lt;&lt;&lt;&lt;&lt;&lt; ======= &gt;&gt;&gt;&gt;&gt;&gt;&gt;
+git add .
+git commit
+git push</code></pre>
+        <p><code>.gitignore</code> 至少挡住不该进仓库的东西：</p>
+        <pre><code>.env
+node_modules/
+*.log</code></pre>
+        <p>发 PR 只需要两类动作：功能分支推上远程，然后在远程仓库页面比较该分支和主分支。</p>
+        <p class="boundary"><strong>到此为止：</strong>不学 Git 对象模型、rebase、cherry-pick。会用 merge 和冲突闭环即可。</p>
+        <div class="two-col">
+          <a class="source" href="https://git-scm.com/book/en/v2/Git-Branching-Basic-Branching-and-Merging">来源：Pro Git · 分支与合并</a>
+          <a class="source" href="https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request">来源：GitHub Docs · 创建 PR</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="lesson-section" id="editor" aria-labelledby="editor-title">
+      <div class="section-label">
+        <span class="section-number">CATEGORY 03</span>
+        <h2 id="editor-title">编辑器</h2>
+        <span class="minimum-badge">跳转、断点、格式化</span>
+      </div>
+      <div class="lesson-body">
+        <p>选择 VS Code 这一条路径即可。装好 Go 扩展后，记住三个动作：</p>
+        <table class="command-table">
+          <thead>
+            <tr><th>动作</th><th>怎么做到</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>跳转定义</td><td>把光标放在符号上，按 <code>F12</code>；或按住 <code>Ctrl</code> 点击。</td></tr>
+            <tr><td>断点调试</td><td>在行号左侧点红点，按 <code>F5</code>，选择 Go 调试配置；断住后用 <code>F10</code> 单步、看变量。</td></tr>
+            <tr><td>格式化</td><td>按 <code>Shift + Alt + F</code>，Go 文件应交给 <code>gofmt</code>。</td></tr>
+          </tbody>
+        </table>
+        <p class="note">验收方法：写一个两数相加的 Go 小程序，在相加那行打断点，停住后读出两个参数的值；保存前格式化一次。</p>
+        <p class="boundary"><strong>到此为止：</strong>不学插件开发、调试器源码，也不展开 IDEA 的另一套快捷键。</p>
+        <div class="two-col">
+          <a class="source" href="https://code.visualstudio.com/docs/languages/go">来源：VS Code · Go</a>
+          <a class="source" href="https://code.visualstudio.com/docs/debugtest/debugging">来源：VS Code · Debugging</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="lesson-section" id="data" aria-labelledby="data-title">
+      <div class="section-label">
+        <span class="section-number">CATEGORY 04</span>
+        <h2 id="data-title">数据格式</h2>
+        <span class="minimum-badge">读结构、写配置</span>
+      </div>
+      <div class="lesson-body">
+        <p>JSON 只需要会读写对象、数组、字符串、数字、布尔值和 <code>null</code>，并看懂嵌套。</p>
+        <pre><code>{
+  "user": {
+    "id": 7,
+    "roles": ["admin", "dev"],
+    "active": true
+  }
+}</code></pre>
+        <p>在 Linux 终端里用 <code>cat</code> 读、用重定向写，确认你知道哪里是对象、哪里是数组：</p>
+        <pre><code>cat user.json
+printf '%s\n' '{"name":"Ada","tags":["go","sql"]}' &gt; user.json</code></pre>
+        <p>YAML 只看缩进、键值和小列表。冒号后要有空格，同层缩进必须一致，不用 Tab。</p>
+        <pre><code>server:
+  port: 8080
+  hosts:
+    - localhost
+    - 127.0.0.1</code></pre>
+        <p>Markdown 至少要会标题、列表、代码块和链接：</p>
+        <pre><code># 标题
+
+- 列表项
+- 另一个列表项
+
+`行内代码`
+
+```bash
+echo "code block"
+```
+
+[链接文字](https://example.com)</code></pre>
+        <p class="boundary"><strong>到此为止：</strong>不学 JSON Schema、YAML 锚点与高级 Markdown 扩展。</p>
+        <div class="two-col">
+          <a class="source" href="https://www.json.org/json-en.html">来源：JSON 规范</a>
+          <a class="source" href="https://commonmark.org/help/">来源：CommonMark 语法</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="lesson-section" id="requests" aria-labelledby="requests-title">
+      <div class="section-label">
+        <span class="section-number">CATEGORY 05</span>
+        <h2 id="requests-title">接口调试</h2>
+        <span class="minimum-badge">方法、Header、Body</span>
+      </div>
+      <div class="lesson-body">
+        <p>Postman、Apifox 和 curl 本质上都在填同一张表：请求方法、URL、Header、Body。带登录态时，再填 Authorization。</p>
+        <pre><code>curl -X POST "http://localhost:8080/api/users" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer &lt;token&gt;" \
+  -d '{"name":"Ada"}'</code></pre>
+        <table class="command-table">
+          <thead>
+            <tr><th>部分</th><th>这行在说什么</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>-X POST</code></td><td>创建资源，通常把数据放在请求体里。</td></tr>
+            <tr><td><code>URL</code></td><td>请求发往哪个服务、哪个资源。</td></tr>
+            <tr><td><code>Content-Type</code></td><td>告诉服务端 body 是 JSON。</td></tr>
+            <tr><td><code>Authorization</code></td><td>带上身份凭证；Token 不要提交进 Git。</td></tr>
+            <tr><td><code>-d</code></td><td>发送请求体。</td></tr>
+          </tbody>
+        </table>
+        <p class="note">在 Linux 终端中直接使用 <code>curl</code>，反斜杠 <code>\</code> 表示下一行仍是同一条命令。</p>
+        <p class="boundary"><strong>到此为止：</strong>不学 OAuth、签名算法和 API 设计。会组装并发送一条带 Header、Body、Token 的请求就够了。</p>
+        <a class="source" href="https://curl.se/docs/manpage.html">来源：curl 官方手册</a>
+      </div>
+    </section>
+
+    <section class="lesson-section" id="network" aria-labelledby="network-title">
+      <div class="section-label">
+        <span class="section-number">CATEGORY 06</span>
+        <h2 id="network-title">抓包与调试</h2>
+        <span class="minimum-badge">读一条请求</span>
+      </div>
+      <div class="lesson-body">
+        <p>打开浏览器 DevTools 的 Network 面板，刷新页面，点中任意一条请求。你至少要能说出下面五项：</p>
+        <table class="command-table">
+          <thead>
+            <tr><th>字段</th><th>你必须读出的信息</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Name / URL</td><td>请求了哪个接口。</td></tr>
+            <tr><td>Method</td><td>GET 查询，POST 提交，PUT/PATCH 更新，DELETE 删除。</td></tr>
+            <tr><td>Status</td><td>2xx 成功，4xx 请求或身份问题，5xx 服务端问题。</td></tr>
+            <tr><td>Time</td><td>这条请求总共花了多久。</td></tr>
+            <tr><td>Headers / Payload / Response</td><td>带了什么、发了什么、服务端回了什么。</td></tr>
+          </tbody>
+        </table>
+        <p>例如看到 <code>POST /api/login · 401 · 142 ms</code>，你能确定的是：请求已经发到服务端，服务端拒绝了登录，整个往返用时约 142 毫秒。仅凭这一行，不能断言是密码错、数据库坏，还是前端写错。</p>
+        <p class="boundary"><strong>到此为止：</strong>不学 TCP/TLS 握手、HTTP 缓存机制或性能优化。会读请求和响应即可。</p>
+        <a class="source" href="https://developer.chrome.com/docs/devtools/network/">来源：Chrome DevTools · Network</a>
+      </div>
+    </section>
+
+    <section class="lesson-section" id="docker" aria-labelledby="docker-title">
+      <div class="section-label">
+        <span class="section-number">CATEGORY 07</span>
+        <h2 id="docker-title">容器</h2>
+        <span class="minimum-badge">起库、连库、建表</span>
+      </div>
+      <div class="lesson-body">
+        <p>只做一件事：把 MySQL 8.4 放进容器，让宿主机通过 <code>3307</code> 访问容器的 <code>3306</code>。</p>
+        <pre><code>docker run -d \
+  --name mysql-stage0 \
+  -p 3307:3306 \
+  -e MYSQL_ROOT_PASSWORD=stage0 \
+  -v mysql_stage0:/var/lib/mysql \
+  mysql:8.4</code></pre>
+        <p><code>-p 3307:3306</code> 的顺序是“宿主端口:容器端口”。这里宿主 <code>3306</code> 可能已经被占用，所以换成 <code>3307</code>，容器里的 MySQL 仍然是 <code>3306</code>。</p>
+        <p>确认容器状态，并进入容器里的 MySQL 客户端：</p>
+        <pre><code>docker ps
+docker exec -it mysql-stage0 mysql -uroot -pstage0</code></pre>
+        <p>连接后执行最低 SQL：</p>
+        <pre><code>CREATE DATABASE stage0;
+USE stage0;
+CREATE TABLE users (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  name VARCHAR(50) NOT NULL
+);
+SHOW TABLES;</code></pre>
+        <p class="note">如果启动失败，先看 <code>docker logs mysql-stage0</code>，不要先拆镜像或研究 Docker 原理。</p>
+        <p class="boundary"><strong>到此为止：</strong>不学 Dockerfile、Compose、镜像分层和网络模式。能 <code>run</code>、连上、建库建表即可。</p>
+        <a class="source" href="https://hub.docker.com/_/mysql">来源：Docker Hub · MySQL 官方镜像</a>
+      </div>
+    </section>
+
+    <section class="checkpoint-band" id="checkpoint" aria-labelledby="checkpoint-title">
+      <div class="wrap">
+        <div class="checkpoint-head">
+          <div class="section-index">过关题 / 03</div>
+          <div>
+            <h2 id="checkpoint-title">三条线，一题一条</h2>
+            <p>每题只检验一个过关标准。选完会立刻显示结果；先作答，再看解释。</p>
+            <p class="score-line" id="score-line" aria-live="polite">已作答 0 / 3 · 正确 0</p>
+          </div>
+        </div>
+
+        <div class="quiz-list">
+          <article class="quiz" id="quiz-git" data-quiz data-correct="a">
+            <div class="quiz-meta">过关标准 01 · Git 推送与冲突</div>
+            <h3>你本地 <code>main</code> 有提交，远程 <code>main</code> 也前进了，并且同一行发生冲突。你已经执行 <code>git pull origin main</code>。接下来哪一个动作能正确收口？</h3>
+            <div class="options">
+              <button class="option" type="button" data-choice="a">A. 改到最终内容，删除全部冲突标记，依次 add、commit，再 push</button>
+              <button class="option" type="button" data-choice="b">B. 保留两套冲突内容，直接提交，再 push 到远程 main</button>
+              <button class="option" type="button" data-choice="c">C. 执行强制重置，随后用 push --force 覆盖远程 main</button>
+              <button class="option" type="button" data-choice="d">D. 用远程文件覆盖本地文件，add 后立即 push 远程 main</button>
+            </div>
+            <p class="feedback" data-correct-text="冲突解决后的文件必须是可运行的最终内容，标记要删净；git add 标记已解决，commit 收尾合并，最后才 push。" data-incorrect-text="冲突标记不能进入提交；强行覆盖也不是这条过关标准要求的正常闭环。应改到最终内容，add、commit，再 push。"></p>
+          </article>
+
+          <article class="quiz" id="quiz-docker" data-quiz data-correct="c">
+            <div class="quiz-meta">过关标准 02 · Docker 启动 MySQL</div>
+            <h3>宿主机的 <code>3306</code> 已被占用。下面哪组操作能启动 MySQL 8.4，从宿主机 <code>3307</code> 连接，并进入客户端建库建表？</h3>
+            <div class="options">
+              <button class="option" type="button" data-choice="a">A. 反向端口映射，run 后连接宿主 3306，再进入客户端建表</button>
+              <button class="option" type="button" data-choice="b">B. 用 build 替代 run，映射宿主 3307，再从容器名连接 3306</button>
+              <button class="option" type="button" data-choice="c">C. 正确端口映射，run 后 exec 进入客户端，再建库建表</button>
+              <button class="option" type="button" data-choice="d">D. 用 start 指定端口，映射宿主 3307，再从 localhost 连接</button>
+            </div>
+            <p class="feedback" data-correct-text="端口映射是“宿主:容器”。容器可能还没有宿主 mysql 客户端，所以用 docker exec 进入容器客户端是最稳的最低路径。" data-incorrect-text="关键在端口顺序和连接入口。应是宿主 3307 映射容器 3306；没有宿主机客户端时，docker exec 可进入容器里的 mysql。"></p>
+          </article>
+
+          <article class="quiz" id="quiz-network" data-quiz data-correct="b">
+            <div class="quiz-meta">过关标准 03 · 读懂 Network</div>
+            <h3>Network 面板显示下面这一条请求。哪句判断只使用了面板能支持的证据？</h3>
+            <p class="snapshot"><span>POST /api/orders</span><span>500</span><span>2.31 s</span><span>Fetch</span></p>
+            <div class="options">
+              <button class="option" type="button" data-choice="a">A. 浏览器没有发出请求，后端服务根本没有收到这次订单请求</button>
+              <button class="option" type="button" data-choice="b">B. 请求到达后端并返回 500，耗时 2.31 秒，具体原因还要看响应</button>
+              <button class="option" type="button" data-choice="c">C. 请求已经到达后端，500 一定表示数据库连接失败，和代码无关</button>
+              <button class="option" type="button" data-choice="d">D. 请求被 CORS 预检拦住，真正的订单接口这次根本没有收到</button>
+            </div>
+            <p class="feedback" data-correct-text="这组字段只能确认请求、状态码和总耗时。500 说明服务端出错，但根因仍需看 Response、服务端日志或具体报错。" data-incorrect-text="Network 中已经出现 500，说明请求到达并收到了服务端响应；但一条汇总记录不足以断定数据库、CORS 或具体代码问题。"></p>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="lesson-footer">
+    <div class="wrap footer-grid">
+      <p>下一步只做验收：把三条过关标准各实际跑一次。任何一步卡住，直接问老师；不要把阶段 0 扩成 Git、Docker 或计算机网络专题。</p>
+      <div class="footer-links">
+        <a href="../reference/stage0-minimum-reference.html">阶段 0 速查表</a>
+        <a href="./0002-stage1-go-minimum-and-cli-challenge.html">阶段 1 · Go 最低过关</a>
+        <a href="../后端就业学习路线-全面版.md">回到路线原文</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="../assets/stage0.js"></script>
+</body>
+</html>
